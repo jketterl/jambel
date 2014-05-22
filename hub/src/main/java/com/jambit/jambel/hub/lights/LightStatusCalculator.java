@@ -1,38 +1,26 @@
 package com.jambit.jambel.hub.lights;
 
-import com.google.common.base.Function;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.Iterables;
-import com.google.inject.Inject;
+import com.google.common.collect.Ordering;
 import com.jambit.jambel.hub.jobs.JobState;
 import com.jambit.jambel.light.LightMode;
-
 import com.jambit.jambel.light.SignalLightStatus;
 
 public class LightStatusCalculator {
-
-	private final ResultAggregator resultAggregator;
-
-	private final PhaseAggregator phaseAggregator;
-
-	@Inject
-	public LightStatusCalculator(ResultAggregator resultAggregator, PhaseAggregator phaseAggregator) {
-		this.resultAggregator = resultAggregator;
-		this.phaseAggregator = phaseAggregator;
-	}
-
 	public SignalLightStatus calc(Iterable<JobState> states) {
 		if(Iterables.isEmpty(states)) {
 			return SignalLightStatus.all(LightMode.OFF);
 		}
 
 		// PHASE
-		JobState.Phase aggregatedPhase = aggregatePhase(states);
+        FluentIterable<JobState.Phase> phases = FluentIterable.from(states).transform(JobState.phaseFunction);
+		JobState.Phase worstPhase = Ordering.natural().min(phases);
 
 		LightMode activeLightMode;
-		switch (aggregatedPhase) {
+		switch (worstPhase) {
 			case STARTED:
-				activeLightMode = LightMode.BLINK;
+				activeLightMode = LightMode.ON;
 				break;
 			case COMPLETED:
 				activeLightMode = LightMode.ON;
@@ -41,11 +29,12 @@ public class LightStatusCalculator {
 				activeLightMode = LightMode.ON;
 				break;
 			default:
-				throw new RuntimeException("phase " + aggregatedPhase + " is unknown");
+				throw new RuntimeException("phase " + worstPhase + " is unknown");
 		}
 
 		// RESULT
-		JobState.Result aggregatedResult = aggregateLastResult(states);
+        FluentIterable<JobState.Result> results = FluentIterable.from(states).transform(JobState.lasResultFunction);
+		JobState.Result aggregatedResult = Ordering.natural().min(results);
 
 		switch (aggregatedResult) {
 			case SUCCESS:
@@ -55,29 +44,11 @@ public class LightStatusCalculator {
 			case FAILURE:
 				return SignalLightStatus.onlyRed(activeLightMode);
 			case ABORTED:
-				return SignalLightStatus.all(activeLightMode).butYellow(LightMode.OFF);
+				return SignalLightStatus.onlyYellow(activeLightMode);
 			case NOT_BUILT:
 				return SignalLightStatus.all(activeLightMode).butYellow(LightMode.OFF);
 			default:
 				throw new RuntimeException("result " + aggregatedResult + " is unknown");
 		}
-	}
-
-	private JobState.Result aggregateLastResult(Iterable<JobState> states) {
-		return resultAggregator.aggregate(FluentIterable.from(states).transform(new Function<JobState, JobState.Result>() {
-			@Override
-			public JobState.Result apply(JobState input) {
-				return input.getLastResult();
-			}
-		}));
-	}
-
-	private JobState.Phase aggregatePhase(Iterable<JobState> states) {
-		return phaseAggregator.aggregate(FluentIterable.from(states).transform(new Function<JobState, JobState.Phase>() {
-			@Override
-			public JobState.Phase apply(JobState input) {
-				return input.getPhase();
-			}
-		}));
 	}
 }

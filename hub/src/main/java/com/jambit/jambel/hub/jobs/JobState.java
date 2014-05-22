@@ -1,15 +1,18 @@
 package com.jambit.jambel.hub.jobs;
 
+import com.google.common.base.Function;
 import com.google.common.base.Objects;
 
 public final class JobState {
+
+    // These are ordered from worst to best.
 
 	public static enum Phase {
 		STARTED, COMPLETED, FINISHED
 	}
 
 	public static enum Result {
-		SUCCESS, UNSTABLE, FAILURE, NOT_BUILT, ABORTED
+		FAILURE, UNSTABLE, ABORTED, NOT_BUILT, SUCCESS
 	}
 
 	private final Phase phase;
@@ -27,6 +30,21 @@ public final class JobState {
 	public Result getLastResult() {
 		return lastResult;
 	}
+
+    // For convenience. (As always, this would be entirely unnecessary with proper closures.)
+    static public Function<JobState, Phase> phaseFunction = new Function<JobState, Phase>() {
+        @Override
+        public Phase apply(JobState input) {
+            return input.getPhase();
+        }
+    };
+
+    static public Function<JobState, Result> lasResultFunction = new Function<JobState, Result>() {
+        @Override
+        public Result apply(JobState input) {
+            return input.getLastResult();
+        }
+    };
 
 	@Override
 	public String toString() {
@@ -51,11 +69,8 @@ public final class JobState {
 		if (getClass() != obj.getClass())
 			return false;
 		JobState other = (JobState) obj;
-		if (lastResult != other.lastResult)
-			return false;
-		if (phase != other.phase)
-			return false;
-		return true;
-	}
+
+        return lastResult == other.lastResult && phase == other.phase;
+    }
 
 }
