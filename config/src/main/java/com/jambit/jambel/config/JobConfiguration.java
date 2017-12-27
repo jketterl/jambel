@@ -12,6 +12,10 @@ public class JobConfiguration {
 
 	private Integer pollingInterval;
 
+	private String username;
+
+	private String apiToken;
+
 	public URL getJenkinsJobUrl() {
 		return jenkinsJobUrl;
 	}
@@ -24,4 +28,11 @@ public class JobConfiguration {
 		return Optional.fromNullable(pollingInterval);
 	}
 
+	public Optional<String> getUsername() {
+		return Optional.fromNullable(username);
+	}
+
+	public Optional<String> getApiToken() {
+		return Optional.fromNullable(apiToken);
+	}
 }

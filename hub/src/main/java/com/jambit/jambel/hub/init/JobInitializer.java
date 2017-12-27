@@ -48,7 +48,14 @@ public class JobInitializer {
 		for (JobConfiguration jobConfig : jambelConfiguration.getJobs()) {
 			URL jobUrl = jobConfig.getJenkinsJobUrl();
 			try {
-				Job job = jobRetriever.retrieve(jobUrl);
+				Job job;
+				if(jobConfig.getUsername().isPresent() && jobConfig.getApiToken().isPresent()) {
+					String username = jobConfig.getUsername().get();
+					String apiToken = jobConfig.getApiToken().get();
+					job = jobRetriever.retrieve(jobUrl, username, apiToken);
+				} else {
+					job = jobRetriever.retrieve(jobUrl);
+				}
 				JobState state = jobStateRetriever.retrieve(job);
 				hub.addJob(job, state);
 
