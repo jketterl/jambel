@@ -78,7 +78,7 @@ public class JenkinsRetriever implements JobRetriever, JobStateRetriever {
 	public Job retrieve(URL jobUrl, String username, String apiToken) throws IOException {
 		String url = jsonUrlFor(jobUrl);
 		JsonJob jsonJob = getJson(url, username, apiToken, JsonJob.class);
-		return new Job(jsonJob.name, jsonJob.toString());
+		return new Job(jsonJob.name, jobUrl.toString());
 	}
 
 	@Override
