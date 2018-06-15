@@ -47,6 +47,9 @@ public final class PollTask implements Runnable {
 			logger.warn("could not retrieve job state for job {}", job, e);
 			// do nothing else. If polling fails, Jenkins might just be temporarily down
 		}
+		catch (Exception e) {
+			logger.error("unhandled exception while polling job {}", job, e);
+		}
 	}
 
 }
